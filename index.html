@@ -50,7 +50,7 @@
         let gameActive = true;
         let spawnTimeout;
 
-        // Listeners for control
+        // --- DESKTOP CONTROLS ---
         window.addEventListener("mousemove", (e) => {
             if (!gameActive) return;
             let rect = canvas.getBoundingClientRect();
@@ -66,7 +66,24 @@
             if (e.key === "ArrowRight" && basket.x < canvas.width - basket.width) basket.x += basket.speed;
         });
 
+        // --- MOBILE TOUCH CONTROLS (NEW) ---
+        canvas.addEventListener("touchmove", (e) => {
+            if (!gameActive) return;
+            // Prevent the phone screen from scrolling up and down while playing
+            e.preventDefault(); 
+            
+            let rect = canvas.getBoundingClientRect();
+            let touch = e.touches[0];
+            
+            // Position basket based on where the finger is touching the canvas
+            basket.x = touch.clientX - rect.left - basket.width / 2;
+        }, { passive: false });
+
+        // Click/Tap to restart
         canvas.addEventListener("click", () => {
+            if (!gameActive) restartGame();
+        });
+        canvas.addEventListener("touchstart", () => {
             if (!gameActive) restartGame();
         });
 
@@ -87,22 +104,19 @@
             gameActive = false;
             clearTimeout(spawnTimeout);
             
-            // Draw a semi-transparent dark overlay
-            ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw "Game Over" Text
             ctx.fillStyle = "#ff4d4d";
-            ctx.font = "bold 48px sans-serif";
-            ctx.fillText("GAME OVER", canvas.width / 2 - 140, canvas.height / 2 - 20);
+            ctx.font = "bold 40px sans-serif";
+            ctx.fillText("GAME OVER", canvas.width / 2 - 120, canvas.height / 2 - 20);
 
-            // Draw Final Score & Restart instructions
             ctx.fillStyle = "#ffd700";
-            ctx.font = "24px sans-serif";
-            ctx.fillText("Final Score: " + score, canvas.width / 2 - 70, canvas.height / 2 + 30);
+            ctx.font = "22px sans-serif";
+            ctx.fillText("Final Score: " + score, canvas.width / 2 - 60, canvas.height / 2 + 30);
             
             ctx.fillStyle = "#ffffff";
-            ctx.fillText("Click the screen or Press 'R' to Play Again", canvas.width / 2 - 200, canvas.height / 2 + 80);
+            ctx.fillText("Tap screen to Play Again", canvas.width / 2 - 110, canvas.height / 2 + 80);
         }
 
         function restartGame() {
@@ -120,6 +134,10 @@
             if (!gameActive) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Keep basket within canvas bounds
+            if (basket.x < 0) basket.x = 0;
+            if (basket.x > canvas.width - basket.width) basket.x = canvas.width - basket.width;
 
             // Draw Basket
             ctx.fillStyle = "#ff9933";
@@ -146,12 +164,12 @@
                     ctx.fill();
                 }
 
-                // Collision with Basket
+                // Collision
                 if (item.y + item.size >= basket.y && item.x + item.size >= basket.x && item.x <= basket.x + basket.width) {
                     if (item.type === "modak") {
                         score += 10;
                     } else {
-                        lives--; // Hit a rock = lose a life
+                        lives--;
                     }
                     scoreDisplay.innerText = score;
                     livesDisplay.innerText = lives;
@@ -164,10 +182,10 @@
                     continue;
                 }
 
-                // Item falls past the screen border
+                // Drop down check
                 if (item.y > canvas.height) {
                     if (item.type === "modak") {
-                        lives--; // Missed a modak = lose a life
+                        lives--; 
                         livesDisplay.innerText = lives;
                     }
                     items.splice(i, 1);
